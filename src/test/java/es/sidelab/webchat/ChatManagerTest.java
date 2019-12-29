@@ -118,8 +118,6 @@ public class ChatManagerTest {
 			for (User userInChat : chat.getUsers()) {
 				System.out.println("User: " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
 			}
-			
-			chat.sendMessage(user, "In chat " + chat.getName() + ", user " + user.getName() + " says: Hello!!");
 		}
 		return "Success";
 	}
