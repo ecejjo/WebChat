@@ -1,8 +1,13 @@
 package es.codeurjc.webchat;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Chat {
 
@@ -51,9 +56,21 @@ public class Chat {
 	}
 
 	public void sendMessage(User user, String message) {
-		for(User u : users.values()){
-			u.newMessage(this, user, message);
+		
+		Collection<User> usersInChat = users.values();
+		ArrayList<ExecutorService> executors = new ArrayList<ExecutorService>(usersInChat.size());
+
+		for (int i = 0; i < usersInChat.size(); i++) {			
+			executors.add(Executors.newFixedThreadPool(1));
+			CompletionService<String> completionService = new ExecutorCompletionService<>(executors.get(i));
+			completionService.submit(() -> sendMessageThread(usersInChat.iterator().next(), message));
 		}
+	}
+	
+	private String sendMessageThread(User user, String message) {
+		message = user.getName() + " console> " + message;
+		user.newMessage(this, user, message);
+		return "Sent!";
 	}
 
 	public void close() {
