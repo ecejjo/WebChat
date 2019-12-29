@@ -33,9 +33,12 @@ public class Chat {
 	}
 
 	public void removeUser(User user) {
-		users.remove(user.getName());
-		for(User u : users.values()){
-			u.userExitedFromChat(this, user);
+		// remove() returns:
+		// the previous value associated with key, or null if there was no mapping for key
+		if (users.remove(user.getName()) != null) {
+			for(User u : users.values()){
+				u.userExitedFromChat(this, user);
+			}
 		}
 	}
 
