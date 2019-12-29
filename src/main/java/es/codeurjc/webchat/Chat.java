@@ -17,9 +17,9 @@ public class Chat {
 
 	private ChatManager chatManager;
 	
-	private Collection<User> usersInChat = users.values();
-	private ArrayList<ExecutorService> executors = new ArrayList<ExecutorService>(usersInChat.size());
-	private ArrayList<CompletionService<String>> completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
+	private ArrayList<User> usersInChat;
+	private ArrayList<ExecutorService> executors;
+	private ArrayList<CompletionService<String>> completionServices;
 	
 	public Chat(ChatManager chatManager, String name) {
 		this.chatManager = chatManager;
@@ -62,10 +62,16 @@ public class Chat {
 
 	public void sendMessage(User user, String message) {
 		
+		usersInChat = new ArrayList<>(users.values());
+		executors = new ArrayList<ExecutorService>(usersInChat.size());
+		completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
+		
 		for (int i = 0; i < usersInChat.size(); i++) {			
-			executors.add(Executors.newFixedThreadPool(1));
-			completionServices.set(i, new ExecutorCompletionService<>(executors.get(i)));
-			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.iterator().next(), message));
+			executors.add(i, Executors.newFixedThreadPool(1));			
+			completionServices.add(i, new ExecutorCompletionService<>(executors.get(i)));
+			
+			final int userIndex = i;
+			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), message));
 		}
 	}
 	
@@ -81,7 +87,6 @@ public class Chat {
 	}
 	
 	private String sendMessageThread(User user, String message) {
-		message = user.getName() + " console> " + message;
 		user.newMessage(this, user, message);
 		return "Sent!";
 	}

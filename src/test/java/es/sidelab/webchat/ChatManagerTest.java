@@ -136,7 +136,6 @@ public class ChatManagerTest {
 		TestUser user;
 		int i = 0;
 		do {
-			
 			user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
@@ -149,8 +148,8 @@ public class ChatManagerTest {
 					}
 				}
 			};
-			
 			chat.addUser(user);
+			i++;
 		}
 		while(i < NUM_CONCURRENT_USERS);
 		
