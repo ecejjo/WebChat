@@ -2,7 +2,6 @@ package es.sidelab.webchat;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -70,8 +69,8 @@ public class ChatManagerTest {
 	@Test
 	public void mejora1() throws InterruptedException, TimeoutException {
 		
-		final int NUM_CONCURRENT_USERS = 4;
-		final int MAX_CHATS = 50;
+		final int NUM_CONCURRENT_USERS = 400;
+		final int MAX_CHATS = 500;
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		
@@ -92,12 +91,12 @@ public class ChatManagerTest {
 	
 	public Runnable mejora1Thread(ChatManager chatManager, int userIndex) throws InterruptedException, TimeoutException {
 		
-		Thread.sleep((long)(Math.random() * 1));
+		// Thread.sleep((long)(Math.random() * 1));
 
 		TestUser user = new TestUser("user" + userIndex);
 		chatManager.newUser(user);
 				
-		final int NUM_ITERATIONS = 4;
+		final int NUM_ITERATIONS = 400;
 		
 		for (int userIteration = 0; userIteration < NUM_ITERATIONS; userIteration++) {
 			System.out.println("Running..." + " userIndex #" + userIndex + " userIteration #" + userIteration);
@@ -105,9 +104,10 @@ public class ChatManagerTest {
 			Chat chat = chatManager.newChat("Chat" + userIteration, 5, TimeUnit.SECONDS);
 			
 			chat.addUser(user);
-			
-			Collection<User> usersInChat = chat.getUsers();
-			System.out.println(usersInChat.toString());			
+									
+			for (User userInChat : chat.getUsers()) {
+				System.out.println("User: " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
+			}
 		}
 		return null;
 	}
