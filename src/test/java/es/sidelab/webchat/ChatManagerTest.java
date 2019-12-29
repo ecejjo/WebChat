@@ -3,6 +3,12 @@ package es.sidelab.webchat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Objects;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -67,36 +73,40 @@ public class ChatManagerTest {
 	}
 	
 	@Test
-	public void mejora1() throws InterruptedException, TimeoutException {
-		
-		final int NUM_CONCURRENT_USERS = 400;
-		final int MAX_CHATS = 500;
+	public void mejora1() throws Throwable {
+
+		final int NUM_CONCURRENT_USERS = 4;
+		final int MAX_CHATS = 50;
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
-		
-		final Thread[] threadsList = new Thread[NUM_CONCURRENT_USERS];
-		
+
+		ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_USERS);
+		CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
+
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
-			threadsList[i] = new Thread(mejora1Thread(chatManager, i));
-		}
-		
-		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
-			threadsList[i].start();
+			final int userIndex = i;
+			completionService.submit(() -> mejora1Thread(chatManager, userIndex));
 		}
 
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
-			threadsList[i].join();
+			try {
+				Future<String> f = completionService.take();
+				assertTrue("Thread execution did not return success", f.get().equals("Success"));
+			} catch (ExecutionException e) {
+				assertTrue("Thread execution throwed ExecutionException:" + e.getMessage(), false);
+				throw e.getCause();
+			} catch (Exception e) {
+				assertTrue("Thread execution throwed exception: " + e.getMessage(), false);
+			}
 		}
 	}
 	
-	public Runnable mejora1Thread(ChatManager chatManager, int userIndex) throws InterruptedException, TimeoutException {
+	public String mejora1Thread(ChatManager chatManager, int userIndex) throws InterruptedException, TimeoutException {
 		
-		// Thread.sleep((long)(Math.random() * 1));
-
 		TestUser user = new TestUser("user" + userIndex);
 		chatManager.newUser(user);
 				
-		final int NUM_ITERATIONS = 400;
+		final int NUM_ITERATIONS = 5;
 		
 		for (int userIteration = 0; userIteration < NUM_ITERATIONS; userIteration++) {
 			System.out.println("Running..." + " userIndex #" + userIndex + " userIteration #" + userIteration);
@@ -109,6 +119,6 @@ public class ChatManagerTest {
 				System.out.println("User: " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
 			}
 		}
-		return null;
+		return "Success";
 	}
 }
