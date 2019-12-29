@@ -2,13 +2,12 @@ package es.codeurjc.webchat;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Chat {
 
 	private String name;
-	private Map<String, User> users = new HashMap<>();
+	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
 
 	private ChatManager chatManager;
 
@@ -22,7 +21,7 @@ public class Chat {
 	}
 
 	public void addUser(User user) {
-		users.put(user.getName(), user);
+		users.putIfAbsent(user.getName(), user);
 		for(User u : users.values()){
 			if (u != user) {
 				u.newUserInChat(this, user);
