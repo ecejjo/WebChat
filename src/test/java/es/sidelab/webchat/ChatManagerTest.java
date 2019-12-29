@@ -123,7 +123,7 @@ public class ChatManagerTest {
 	}
 	
 	@Test
-	public void mejora4() throws Throwable {
+	public void mejora4_1() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -153,7 +153,6 @@ public class ChatManagerTest {
 		
 		long startTime = System.currentTimeMillis();
 		chat.sendMessage(user, "In chat " + chat.getName() + ", user " + user.getName() + " says: Hello!!");		
-		chat.waitForMessageSent();
 		long endTime = System.currentTimeMillis();
 		System.out.println("DEBUG: Message took " + (endTime - startTime) + " milliseconds to run.");
 		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);

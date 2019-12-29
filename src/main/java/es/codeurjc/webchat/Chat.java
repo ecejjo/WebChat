@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,6 +21,7 @@ public class Chat {
 	private ArrayList<User> usersInChat;
 	private ArrayList<ExecutorService> executors;
 	private ArrayList<CompletionService<String>> completionServices;
+	private CountDownLatch sendMessageLatch;
 	
 	public Chat(ChatManager chatManager, String name) {
 		this.chatManager = chatManager;
@@ -73,9 +75,19 @@ public class Chat {
 			final int userIndex = i;
 			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), message));
 		}
+		
+		sendMessageLatch = new CountDownLatch(usersInChat.size());
+		
+		try {
+			sendMessageLatch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public void waitForMessageSent() {
+	// Additional function, not really used once coundDownLatch was introduced.
+	public void assertMessageWasSent() {
 		for (int i = 0; i < usersInChat.size(); i++) {
 			try {
 				Future<String> f = completionServices.get(i).take();
@@ -88,6 +100,7 @@ public class Chat {
 	
 	private String sendMessageThread(User user, String message) {
 		user.newMessage(this, user, message);
+		sendMessageLatch.countDown();
 		return "Sent!";
 	}
 
