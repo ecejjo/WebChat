@@ -21,11 +21,14 @@ public class Chat {
 	}
 
 	public void addUser(User user) {
-		users.putIfAbsent(user.getName(), user);
-		for(User u : users.values()){
-			if (u != user) {
-				u.newUserInChat(this, user);
-			}
+		// putIfAbsent() returns:
+		// the previous value associated with the specified key, or null if there was no mapping for the key
+		if (users.putIfAbsent(user.getName(), user) == null) {
+			for(User u : users.values()){
+				if (u != user) {
+					u.newUserInChat(this, user);
+				}
+			}			
 		}
 	}
 

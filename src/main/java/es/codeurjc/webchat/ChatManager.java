@@ -17,12 +17,11 @@ public class ChatManager {
 	}
 
 	public void newUser(User user) {
-		
-		if(users.containsKey(user.getName())){
+		// putIfAbsent() returns:
+		// the previous value associated with the specified key, or null if there was no mapping for the key
+		if (users.putIfAbsent(user.getName(), user) != null) {
 			throw new IllegalArgumentException("There is already a user with name \'"
-					+ user.getName() + "\'");
-		} else {
-			users.putIfAbsent(user.getName(), user);
+					+ user.getName() + "\'");				
 		}
 	}
 
@@ -37,13 +36,17 @@ public class ChatManager {
 			return chats.get(name);
 		} else {
 			Chat newChat = new Chat(this, name);
-			chats.putIfAbsent(name, newChat);
-			
-			for(User user : users.values()){
-				user.newChat(newChat);
+			// putIfAbsent() returns:
+			// the previous value associated with the specified key, or null if there was no mapping for the key
+			if (chats.putIfAbsent(name, newChat) == null) {
+				for(User user : users.values()){
+					user.newChat(newChat);
+				}
+				return newChat;
 			}
-
-			return newChat;
+			else {
+				return chats.get(name);				
+			}
 		}
 	}
 
