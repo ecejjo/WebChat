@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Chat {
 
@@ -15,7 +16,11 @@ public class Chat {
 	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
 
 	private ChatManager chatManager;
-
+	
+	private Collection<User> usersInChat = users.values();
+	private ArrayList<ExecutorService> executors = new ArrayList<ExecutorService>(usersInChat.size());
+	private ArrayList<CompletionService<String>> completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
+	
 	public Chat(ChatManager chatManager, String name) {
 		this.chatManager = chatManager;
 		this.name = name;
@@ -57,13 +62,21 @@ public class Chat {
 
 	public void sendMessage(User user, String message) {
 		
-		Collection<User> usersInChat = users.values();
-		ArrayList<ExecutorService> executors = new ArrayList<ExecutorService>(usersInChat.size());
-
 		for (int i = 0; i < usersInChat.size(); i++) {			
 			executors.add(Executors.newFixedThreadPool(1));
-			CompletionService<String> completionService = new ExecutorCompletionService<>(executors.get(i));
-			completionService.submit(() -> sendMessageThread(usersInChat.iterator().next(), message));
+			completionServices.set(i, new ExecutorCompletionService<>(executors.get(i)));
+			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.iterator().next(), message));
+		}
+	}
+	
+	public void waitForMessageSent() {
+		for (int i = 0; i < usersInChat.size(); i++) {
+			try {
+				Future<String> f = completionServices.get(i).take();
+				assert(f.get().equals("Sent!"));
+			} catch (Exception e) {
+				System.out.println("Thread execution throwed exception: " + e.getMessage());
+			}
 		}
 	}
 	
