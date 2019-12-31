@@ -175,53 +175,57 @@ public class ChatManagerTest {
 		do {
 			user = new TestUser("user" + i) {
 				
-				// public Exchanger<Boolean> messageConsumedExchanger = new Exchanger<Boolean>();
-				// boolean newMessageToken = false;
+				private Exchanger<Boolean> messageConsumedExchanger = new Exchanger<Boolean>();
+				boolean rightOrder = true;
 				
 				int messageCounter = 0;
 				
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
 					
-					System.out.println("newMessage(): Starting ...");
-					System.out.println("newMessage(): user: " + user.getName());
-					System.out.println("newMessage(): message: " + message);
-
-					// System.out.println("newMessage(): newMessageToken: " + newMessageToken);
-
-					/*
-					try {
-						newMessageToken = messageConsumedExchanger.exchange(newMessageToken);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					*/
-
+					String traceHeader = "newMessage(), " + user.getName() + ": "; 
+					System.out.println(traceHeader + "Starting ...");
+					System.out.println(traceHeader + "message: " + message);
+					System.out.println(traceHeader + "rightOrder: " + rightOrder);
 					
 					try {
 						// Thread.sleep(500);
 						Thread.sleep((long)(Math.random() * 500));
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
-						System.out.println("Exception took place!!");
+						System.out.println(traceHeader + "Exception took place!!");
 						e.printStackTrace();
 					}
 					
-					System.out.println(" - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
+					System.out.println(traceHeader + " - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 
 					if (user.getName().equals("user0")) {
-						System.out.println("newMessage(): messageCounter: " + messageCounter);
+						System.out.println(traceHeader + "messageCounter: " + messageCounter);
 						
 						if (message.equals(Integer.toString(messageCounter))) {
-							System.out.println("Mensaje recibido en orden correcto!!");
+							System.out.println(traceHeader + "Mensaje recibido en orden correcto!!");
 						}
 						else {
-							System.out.println("Mensaje recibido en orden incorrecto!!");
-				            throw new RuntimeException("Orden de mensajes incorrecto");
+							System.out.println(traceHeader + "Mensaje recibido en orden incorrecto!!");
+							rightOrder = false;				            
 						}
 						messageCounter++;
 					}
+
+					System.out.println(traceHeader + "Let's try exchange ...");
+					try {
+						rightOrder = messageConsumedExchanger.exchange(rightOrder, 1, TimeUnit.SECONDS);						
+						if (rightOrder == false) {
+							throw new RuntimeException("Mensaje recibido en orden incorrecto!!");
+						}
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TimeoutException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+										
 					System.out.println("newMessage(): End.");
 				}
 			};
