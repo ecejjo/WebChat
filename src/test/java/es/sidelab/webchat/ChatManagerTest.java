@@ -166,6 +166,7 @@ public class ChatManagerTest {
 
 		final int MAX_CHATS = 1;
 		final int NUM_CONCURRENT_USERS = 2;
+		Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_2", 5, TimeUnit.SECONDS);
@@ -175,9 +176,7 @@ public class ChatManagerTest {
 		do {
 			user = new TestUser("user" + i) {
 				
-				private Exchanger<Boolean> messageConsumedExchanger = new Exchanger<Boolean>();
 				boolean rightOrder = true;
-				
 				int messageCounter = 0;
 				
 				@Override
@@ -206,27 +205,24 @@ public class ChatManagerTest {
 							System.out.println(traceHeader + "Mensaje recibido en orden correcto!!");
 						}
 						else {
-							System.out.println(traceHeader + "Mensaje recibido en orden incorrecto!!");
+							System.out.println(traceHeader + "Mensaje recibido en orden INcorrecto!!");
 							rightOrder = false;				            
 						}
 						messageCounter++;
 					}
 
-					System.out.println(traceHeader + "Let's try exchange ...");
+					System.out.println(traceHeader + "Let's exchange ...");
 					try {
-						rightOrder = messageConsumedExchanger.exchange(rightOrder, 1, TimeUnit.SECONDS);						
+						rightOrder = exchanger.exchange(rightOrder);
 						if (rightOrder == false) {
-							throw new RuntimeException("Mensaje recibido en orden incorrecto!!");
+							throw new RuntimeException("Mensaje recibido en orden INcorrecto!!");
 						}
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-					} catch (TimeoutException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
 					}
 										
-					System.out.println("newMessage(): End.");
+					System.out.println(traceHeader + "End.");
 				}
 			};
 			chat.addUser(user);
@@ -256,10 +252,10 @@ public class ChatManagerTest {
 		final int NUM_MESSAGES = 5;
 		
 		for (int i = 0; i < NUM_MESSAGES; i++) {
-			chat.sendMessage(user, Integer.toString(i));
+			// if (i == 2) { continue; } // Forces an error!!
+			chat.sendMessage(user, Integer.toString(i));				
 			chat.waitForMessageSent();
 		}
-		
 		return "Success";
 	}	
 }
