@@ -21,7 +21,8 @@ public class Chat {
 	private ArrayList<User> usersInChat;
 	private ArrayList<ExecutorService> executors;
 	private ArrayList<CompletionService<String>> completionServices;
-	private CountDownLatch sendMessageLatch;
+	
+	private CountDownLatch sendMessageLatch = new CountDownLatch(0);
 	
 	public Chat(ChatManager chatManager, String name) {
 		this.chatManager = chatManager;
@@ -63,7 +64,7 @@ public class Chat {
 	}
 
 	public void sendMessage(User user, String message) {
-		
+			
 		usersInChat = new ArrayList<>(users.values());
 		executors = new ArrayList<ExecutorService>(usersInChat.size());
 		completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
@@ -77,7 +78,10 @@ public class Chat {
 		}
 		
 		sendMessageLatch = new CountDownLatch(usersInChat.size());
-		
+		waitForMessageSent();
+	}
+	
+	public void waitForMessageSent() {
 		try {
 			sendMessageLatch.await();
 		} catch (InterruptedException e) {

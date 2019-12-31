@@ -4,6 +4,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Objects;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -129,7 +130,7 @@ public class ChatManagerTest {
 		final int MAX_CHATS = 1;
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
-		Chat chat = chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
+		Chat chat = chatManager.newChat("mejora4_1", 5, TimeUnit.SECONDS);
 		
 		TestUser user;
 		int i = 0;
@@ -137,13 +138,14 @@ public class ChatManagerTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
-					System.out.println("New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
-					 try {
+					System.out.println("newMessage(): Starting ...");
+					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					System.out.println("New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
 			chat.addUser(user);
@@ -152,9 +154,108 @@ public class ChatManagerTest {
 		while(i < NUM_CONCURRENT_USERS);
 		
 		long startTime = System.currentTimeMillis();
-		chat.sendMessage(user, "In chat " + chat.getName() + ", user " + user.getName() + " says: Hello!!");		
+		chat.sendMessage(user, "Hello!!");
+		chat.waitForMessageSent();
 		long endTime = System.currentTimeMillis();
 		System.out.println("DEBUG: Message took " + (endTime - startTime) + " milliseconds to run.");
 		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
 	}
+	
+	@Test
+	public void mejora4_2() throws Throwable {
+
+		final int MAX_CHATS = 1;
+		final int NUM_CONCURRENT_USERS = 2;
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
+		Chat chat = chatManager.newChat("mejora4_2", 5, TimeUnit.SECONDS);
+		
+		TestUser user;
+		int i = 0;
+		do {
+			user = new TestUser("user" + i) {
+				
+				// public Exchanger<Boolean> messageConsumedExchanger = new Exchanger<Boolean>();
+				// boolean newMessageToken = false;
+				
+				int messageCounter = 0;
+				
+				@Override
+				public void newMessage(Chat chat, User user, String message) {
+					
+					System.out.println("newMessage(): Starting ...");
+					System.out.println("newMessage(): user: " + user.getName());
+					System.out.println("newMessage(): message: " + message);
+
+					// System.out.println("newMessage(): newMessageToken: " + newMessageToken);
+
+					/*
+					try {
+						newMessageToken = messageConsumedExchanger.exchange(newMessageToken);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					*/
+
+					
+					try {
+						// Thread.sleep(500);
+						Thread.sleep((long)(Math.random() * 500));
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						System.out.println("Exception took place!!");
+						e.printStackTrace();
+					}
+					
+					System.out.println(" - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
+
+					if (user.getName().equals("user0")) {
+						System.out.println("newMessage(): messageCounter: " + messageCounter);
+						
+						if (message.equals(Integer.toString(messageCounter))) {
+							System.out.println("Mensaje recibido en orden correcto!!");
+						}
+						else {
+							System.out.println("Mensaje recibido en orden incorrecto!!");
+				            throw new RuntimeException("Orden de mensajes incorrecto");
+						}
+						messageCounter++;
+					}
+					System.out.println("newMessage(): End.");
+				}
+			};
+			chat.addUser(user);
+			i++;
+		}
+		while(i < NUM_CONCURRENT_USERS);
+		
+		ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_USERS);
+		CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
+		
+		final TestUser userFinal = user;
+		completionService.submit(() -> mejora4_2Thread(chat, userFinal));
+
+		try {
+			Future<String> f = completionService.take();
+			assertTrue("Thread execution did not return success", f.get().equals("Success"));
+		} catch (ExecutionException e) {
+			assertTrue("Thread execution throwed ExecutionException:" + e.getMessage(), false);
+			throw e.getCause();
+		} catch (Exception e) {
+			assertTrue("Thread execution throwed exception: " + e.getMessage(), false);
+		}
+	}
+	
+	public String mejora4_2Thread(Chat chat, TestUser user) throws InterruptedException, TimeoutException {
+
+		final int NUM_MESSAGES = 5;
+		
+		for (int i = 0; i < NUM_MESSAGES; i++) {
+			chat.sendMessage(user, Integer.toString(i));
+			chat.waitForMessageSent();
+		}
+		
+		return "Success";
+	}	
 }
