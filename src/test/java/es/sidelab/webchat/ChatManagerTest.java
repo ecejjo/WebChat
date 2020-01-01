@@ -161,12 +161,14 @@ public class ChatManagerTest {
 		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
 	}
 	
+	Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
+	boolean rightOrderFlag = true;
+
 	@Test
 	public void mejora4_2() throws Throwable {
 
 		final int MAX_CHATS = 1;
 		final int NUM_CONCURRENT_USERS = 2;
-		Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_2", 5, TimeUnit.SECONDS);
@@ -176,7 +178,7 @@ public class ChatManagerTest {
 		do {
 			user = new TestUser("user" + i) {
 				
-				boolean rightOrder = true;
+				// boolean rightOrderFlag = true;
 				int messageCounter = 0;
 				
 				@Override
@@ -185,7 +187,7 @@ public class ChatManagerTest {
 					String traceHeader = "newMessage(), " + user.getName() + ": "; 
 					System.out.println(traceHeader + "Starting ...");
 					System.out.println(traceHeader + "message: " + message);
-					System.out.println(traceHeader + "rightOrder: " + rightOrder);
+					System.out.println(traceHeader + "rightOrderFlag: " + rightOrderFlag);
 					
 					try {
 						// Thread.sleep(500);
@@ -198,30 +200,21 @@ public class ChatManagerTest {
 					
 					System.out.println(traceHeader + " - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 
-					if (user.getName().equals("user0")) {
+					try {
 						System.out.println(traceHeader + "messageCounter: " + messageCounter);
-						
 						if (message.equals(Integer.toString(messageCounter))) {
 							System.out.println(traceHeader + "Mensaje recibido en orden correcto!!");
+							rightOrderFlag = exchanger.exchange(rightOrderFlag);
 						}
 						else {
 							System.out.println(traceHeader + "Mensaje recibido en orden INcorrecto!!");
-							rightOrder = false;				            
-						}
-						messageCounter++;
-					}
-
-					System.out.println(traceHeader + "Let's exchange ...");
-					try {
-						rightOrder = exchanger.exchange(rightOrder);
-						if (rightOrder == false) {
-							throw new RuntimeException("Mensaje recibido en orden INcorrecto!!");
+							rightOrderFlag = exchanger.exchange(false);						
 						}
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-										
+					messageCounter++;
 					System.out.println(traceHeader + "End.");
 				}
 			};
@@ -235,27 +228,36 @@ public class ChatManagerTest {
 		
 		final TestUser userFinal = user;
 		completionService.submit(() -> mejora4_2Thread(chat, userFinal));
-
+		
 		try {
 			Future<String> f = completionService.take();
 			assertTrue("Thread execution did not return success", f.get().equals("Success"));
+			assertTrue("Some message was received in wrong order", rightOrderFlag);
 		} catch (ExecutionException e) {
 			assertTrue("Thread execution throwed ExecutionException:" + e.getMessage(), false);
 			throw e.getCause();
 		} catch (Exception e) {
 			assertTrue("Thread execution throwed exception: " + e.getMessage(), false);
-		}
+		}		
 	}
 	
-	public String mejora4_2Thread(Chat chat, TestUser user) throws InterruptedException, TimeoutException {
+	public String mejora4_2Thread(Chat chat, TestUser user) throws InterruptedException, TimeoutException, RuntimeException {
+
+		String traceHeader = "mejora4_2Thread(), " + user.getName() + ": "; 
 
 		final int NUM_MESSAGES = 5;
-		
+		String result = "Success";
+
 		for (int i = 0; i < NUM_MESSAGES; i++) {
-			// if (i == 2) { continue; } // Forces an error!!
-			chat.sendMessage(user, Integer.toString(i));				
-			chat.waitForMessageSent();
+
+			if (i == 1) { continue; } // Forces an error!!
+
+			System.out.println(traceHeader + "Sending message ...");
+			chat.sendMessage(user, Integer.toString(i));			
+			chat.waitForMessageSent();			
 		}
-		return "Success";
+				
+		System.out.println("mejora4_2Thread(): result is: " + result);
+		return result;
 	}	
 }
