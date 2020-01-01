@@ -178,15 +178,12 @@ public class ChatManagerTest {
 		do {
 			user = new TestUser("user" + i) {
 				
-				// boolean rightOrderFlag = true;
 				int messageCounter = 0;
 				
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
 					
 					String traceHeader = "newMessage(), " + user.getName() + ": "; 
-					System.out.println(traceHeader + "Starting ...");
-					System.out.println(traceHeader + "message: " + message);
 					System.out.println(traceHeader + "rightOrderFlag: " + rightOrderFlag);
 					
 					try {
@@ -215,7 +212,6 @@ public class ChatManagerTest {
 						e.printStackTrace();
 					}
 					messageCounter++;
-					System.out.println(traceHeader + "End.");
 				}
 			};
 			chat.addUser(user);
@@ -257,7 +253,7 @@ public class ChatManagerTest {
 			chat.waitForMessageSent();			
 		}
 				
-		System.out.println("mejora4_2Thread(): result is: " + result);
+		System.out.println(traceHeader + "result is: " + result);
 		return result;
 	}	
 }
