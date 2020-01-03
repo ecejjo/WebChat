@@ -98,8 +98,6 @@ public class Mejora5Test {
 			userName[i] = "user" + i;
 
 			final int final_i = i;
-			System.out.println("value of i is: " + i);
-			System.out.println("value of final_i is: " + final_i);
 			
 			chatManager.newUser(new TestUser(userName[i]) {
 				public void newUserInChat(Chat chat, User user) {
@@ -110,16 +108,18 @@ public class Mejora5Test {
 			
 			users[i] = (TestUser) chatManager.getUser(userName[i]);		
 			chat.addUser(users[i]);
-		}
-
-						
-		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
-			assertTrue("The method 'newUserInChat' should be invoked with 'Chat', but the value is "
-					+ chatName[i], Objects.equals(chatName[i], "Chat"));
 			
-			assertTrue("The method 'newUserInChat' should be invoked with 'user" + i + "', but the value is "
-					+ userName[i], Objects.equals(userName[i], "user" + i));
+			// First user in chat is not notified
+			if (i != 0) {
+				// Only users already in chat are notified
+				for (int j = 0; j < i; j++) {
+					assertTrue("The method 'newUserInChat' should be invoked with 'Chat', but the value is "
+							+ chatName[j], Objects.equals(chatName[j], "Chat"));
+					
+					assertTrue("The method 'newUserInChat' should be invoked with 'user" + i + "', but the value is "
+							+ userName[j], Objects.equals(userName[j], "user" + i));
+				}
+			}
 		}
 	}
-
 }
