@@ -18,7 +18,8 @@ public class ChatManager {
 
 	public void newUser(User user) {
 		// putIfAbsent() returns:
-		// the previous value associated with the specified key, or null if there was no mapping for the key
+		// the previous value associated with the specified key,
+		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) != null) {
 			throw new IllegalArgumentException("There is already a user with name \'"
 					+ user.getName() + "\'");				
@@ -34,7 +35,8 @@ public class ChatManager {
 
 		Chat newChat = new Chat(this, name);
 		// putIfAbsent() returns:
-		// the previous value associated with the specified key, or null if there was no mapping for the key
+		// the previous value associated with the specified key,
+		// or null if there was no mapping for the key
 		if (chats.putIfAbsent(name, newChat) == null) {
 			for(User user : users.values()){
 				user.newChat(newChat);

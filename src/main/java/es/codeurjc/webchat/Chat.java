@@ -35,7 +35,8 @@ public class Chat {
 
 	public void addUser(User user) {
 		// putIfAbsent() returns:
-		// the previous value associated with the specified key, or null if there was no mapping for the key
+		// the previous value associated with the specified key,
+		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) == null) {
 			for(User u : users.values()){
 				if (u != user) {
@@ -47,7 +48,8 @@ public class Chat {
 
 	public void removeUser(User user) {
 		// remove() returns:
-		// the previous value associated with key, or null if there was no mapping for key
+		// the previous value associated with key,
+		// or null if there was no mapping for key
 		if (users.remove(user.getName()) != null) {
 			for(User u : users.values()){
 				u.userExitedFromChat(this, user);
