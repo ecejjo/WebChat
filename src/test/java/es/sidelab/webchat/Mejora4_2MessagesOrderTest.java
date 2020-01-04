@@ -18,13 +18,13 @@ import es.codeurjc.webchat.Chat;
 import es.codeurjc.webchat.ChatManager;
 import es.codeurjc.webchat.User;
 
-public class Mejora4_2Test {
+public class Mejora4_2MessagesOrderTest {
 
 	Exchanger<Boolean> exchanger = new Exchanger<Boolean>();
 	boolean rightOrderFlag = true;
 
 	@Test
-	public void mejora4_2() throws Throwable {
+	public void mejora4_2MessagesOrder() throws Throwable {
 
 		final int MAX_CHATS = 1;
 		final int NUM_CONCURRENT_USERS = 2;
@@ -105,7 +105,7 @@ public class Mejora4_2Test {
 
 		for (int i = 0; i < NUM_MESSAGES; i++) {
 
-			if (i == 1) { continue; } // Forces an error!!
+			// if (i == 1) { continue; } // Forces an error!!
 
 			System.out.println(traceHeader + "Sending message ...");
 			chat.sendMessage(user, Integer.toString(i));			
