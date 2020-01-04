@@ -35,22 +35,18 @@ public class Mejora5_5sendMessage {
 			users[i] = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
-					System.out.println("newMessage(): Starting ...");
-					System.out.println("newMessage(): final_i is: " + final_i);
 					System.out.println("New message '" + message
-										+ " from user " + user.getName()
+										+ "' from user " + user.getName()
 										+ " in chat " + chat.getName());
-
 					chatName[final_i] = chat.getName();
 					userName[final_i] = user.getName();
 					messages[final_i] = message;
-					System.out.println("newMessage(): Done.");
 				}
 			};
 			chat.addUser(users[i]);
 		}
 		
-		System.out.println("Users added");
+		System.out.println("Users added!!");
 		
 		// Message is sent
 		int userSendingMessage = 1;
@@ -59,11 +55,9 @@ public class Mejora5_5sendMessage {
 		System.out.println("Sending message: '" +  messageSent + "', from user" + userSendingMessage );
 		chat.sendMessage(users[userSendingMessage], messageSent);
 		
-		System.out.println("Message sent!");
+		System.out.println("Message sent!!");
 		
 		for (int userNotified = 0; userNotified < NUM_CONCURRENT_USERS; userNotified++) {
-
-			System.out.println("testing...");
 
 			// User sending message is not notified
 			if (userNotified == userSendingMessage) {

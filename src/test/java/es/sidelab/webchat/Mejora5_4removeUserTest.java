@@ -20,30 +20,25 @@ public class Mejora5_4removeUserTest {
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
 
-		ChatManager chatManager = new ChatManager(MAX_CHATS);
-		TestUser users[] = new TestUser[NUM_CONCURRENT_USERS];
-
 		final String[] chatName = new String[NUM_CONCURRENT_USERS];
 		final String[] userName = new String[NUM_CONCURRENT_USERS];
-		
+		TestUser users[] = new TestUser[NUM_CONCURRENT_USERS];
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
 		
 		// Users are added to chat
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 
-			chatName[i] = new String();
-			userName[i] = "user" + i;
-
 			final int final_i = i;
-			
-			chatManager.newUser(new TestUser(userName[i]) {
+			users[i] = new TestUser("user" + i) {
+				@Override
 				public void userExitedFromChat(Chat chat, User user) {
+					System.out.println("User " + user.getName() + " exited from chat " + chat.getName());
 					chatName[final_i] = chat.getName();
 					userName[final_i] = user.getName();
 				}
-			});
-			
-			users[i] = (TestUser) chatManager.getUser(userName[i]);		
+			};			
 			chat.addUser(users[i]);
 		}
 		
@@ -52,7 +47,6 @@ public class Mejora5_4removeUserTest {
 			
 			System.out.println("userRemoved is:" + userRemoved);
 
-			users[userRemoved] = (TestUser) chatManager.getUser(userName[userRemoved]);		
 			chat.removeUser(users[userRemoved]);
 
 			// Only remaining users in chat are notified
