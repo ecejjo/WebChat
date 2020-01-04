@@ -20,32 +20,33 @@ public class Mejora5_5sendMessage {
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
 
-		ChatManager chatManager = new ChatManager(MAX_CHATS);
-		TestUser users[] = new TestUser[NUM_CONCURRENT_USERS];
-
 		final String[] chatName = new String[NUM_CONCURRENT_USERS];
 		final String[] userName = new String[NUM_CONCURRENT_USERS];
 		final String[] messages = new String[NUM_CONCURRENT_USERS];
-		
+		TestUser users[] = new TestUser[NUM_CONCURRENT_USERS];
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("Chat", 5, TimeUnit.SECONDS);
 		
 		// Users are added to chat
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 
-			chatName[i] = new String();
-			userName[i] = "user" + i;
-
 			final int final_i = i;
-			
-			chatManager.newUser(new TestUser(userName[i]) {
+			users[i] = new TestUser("user" + i) {
+				@Override
 				public void newMessage(Chat chat, User user, String message) {
+					System.out.println("newMessage(): Starting ...");
+					System.out.println("newMessage(): final_i is: " + final_i);
+					System.out.println("New message '" + message
+										+ " from user " + user.getName()
+										+ " in chat " + chat.getName());
+
 					chatName[final_i] = chat.getName();
 					userName[final_i] = user.getName();
 					messages[final_i] = message;
+					System.out.println("newMessage(): Done.");
 				}
-			});
-			
-			users[i] = (TestUser) chatManager.getUser(userName[i]);		
+			};
 			chat.addUser(users[i]);
 		}
 		
@@ -55,9 +56,10 @@ public class Mejora5_5sendMessage {
 		int userSendingMessage = 1;
 		String messageSent = "Hello!!";
 		
+		System.out.println("Sending message: '" +  messageSent + "', from user" + userSendingMessage );
 		chat.sendMessage(users[userSendingMessage], messageSent);
 		
-		System.out.println("Message was sent!");
+		System.out.println("Message sent!");
 		
 		for (int userNotified = 0; userNotified < NUM_CONCURRENT_USERS; userNotified++) {
 

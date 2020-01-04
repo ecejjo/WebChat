@@ -76,11 +76,17 @@ public class Chat {
 			completionServices.add(i, new ExecutorCompletionService<>(executors.get(i)));
 			
 			final int userIndex = i;
-			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), message));
+			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
 		}
 		
 		sendMessageLatch = new CountDownLatch(usersInChat.size());
 		waitForMessageSent();
+	}
+	
+	private String sendMessageThread(User userTo, User userFrom, String message) {
+		userTo.newMessage(this, userFrom, message);
+		sendMessageLatch.countDown();
+		return "Sent!";
 	}
 	
 	public void waitForMessageSent() {
@@ -104,12 +110,6 @@ public class Chat {
 		}
 	}
 	
-	private String sendMessageThread(User user, String message) {
-		user.newMessage(this, user, message);
-		sendMessageLatch.countDown();
-		return "Sent!";
-	}
-
 	public void close() {
 		this.chatManager.closeChat(this);
 	}
