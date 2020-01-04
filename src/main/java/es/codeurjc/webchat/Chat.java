@@ -71,6 +71,9 @@ public class Chat {
 		executors = new ArrayList<ExecutorService>(usersInChat.size());
 		completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
 		
+		// CountDownLatch must be created before any submit to avoid race conditions
+		sendMessageLatch = new CountDownLatch(usersInChat.size());
+		
 		for (int i = 0; i < usersInChat.size(); i++) {			
 			executors.add(i, Executors.newFixedThreadPool(1));			
 			completionServices.add(i, new ExecutorCompletionService<>(executors.get(i)));
@@ -79,7 +82,6 @@ public class Chat {
 			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
 		}
 		
-		sendMessageLatch = new CountDownLatch(usersInChat.size());
 		waitForMessageSent();
 	}
 	
