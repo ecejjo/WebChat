@@ -3,6 +3,7 @@ package es.codeurjc.webchat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -10,10 +11,13 @@ public class ChatManager {
 
 	private ConcurrentHashMap<String, Chat> chats = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
-	private int maxChats;
-
+	
+	private int maxChats;	
+	private final Semaphore maxChatsSemaphore;
+	
 	public ChatManager(int maxChats) {
 		this.maxChats = maxChats;
+		this.maxChatsSemaphore = new Semaphore(this.maxChats, true);
 	}
 
 	public void newUser(User user) {
@@ -26,25 +30,36 @@ public class ChatManager {
 		}
 	}
 
-	public Chat newChat(String name, long timeout, TimeUnit unit) throws InterruptedException,
-	TimeoutException {
+	public Chat newChat(String name, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
 
-		if (chats.size() == maxChats) {
-			throw new TimeoutException("There is no enought capacity to create a new chat");
-		}
+		try {
+			if (this.maxChatsSemaphore.tryAcquire(timeout, unit) == true) {
 
-		Chat newChat = new Chat(this, name);
-		// putIfAbsent() returns:
-		// the previous value associated with the specified key,
-		// or null if there was no mapping for the key
-		if (chats.putIfAbsent(name, newChat) == null) {
-			for(User user : users.values()){
-				user.newChat(newChat);
+				Chat newChat = new Chat(this, name);
+
+				// putIfAbsent() returns:
+				// the previous value associated with the specified key,
+				// or null if there was no mapping for the key
+				if (chats.putIfAbsent(name, newChat) == null) {
+					for(User user : users.values()){
+						user.newChat(newChat);
+					}
+					return newChat;
+				}
+				// Chat already existed
+				else {
+					this.maxChatsSemaphore.release();
+					return chats.get(name);				
+				}
 			}
-			return newChat;
+			else
+			{
+				throw new TimeoutException("There is no enought capacity to create a new chat");
+			}
 		}
-		else {
-			return chats.get(name);				
+		catch ( InterruptedException e )
+		{
+			throw new TimeoutException("InterruptedException.");
 		}
 	}
 
@@ -54,6 +69,8 @@ public class ChatManager {
 			throw new IllegalArgumentException("Trying to remove an unknown chat with name \'"
 					+ chat.getName() + "\'");
 		}
+		
+		this.maxChatsSemaphore.release();
 
 		for(User user : users.values()){
 			user.chatClosed(removedChat);
