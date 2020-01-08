@@ -109,7 +109,6 @@ public class Mejora4_2MessagesOrderTest {
 
 			System.out.println(traceHeader + "Sending message ...");
 			chat.sendMessage(user, Integer.toString(i));			
-			chat.waitForMessageSent();			
 		}
 				
 		System.out.println(traceHeader + "result is: " + result);

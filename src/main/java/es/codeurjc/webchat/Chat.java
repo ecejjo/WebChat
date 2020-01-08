@@ -75,22 +75,19 @@ public class Chat {
 			final int userIndex = i;
 			completionService.submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
 		}
-		waitForMessageSent();
-	}
-	
-	private String sendMessageThread(User userTo, User userFrom, String message) {
-		userTo.newMessage(this, userFrom, message);
-		sendMessageLatch.countDown();
-		return "Sent!";
-	}
-	
-	public void waitForMessageSent() {
+		
 		try {
 			sendMessageLatch.await();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private String sendMessageThread(User userTo, User userFrom, String message) {
+		userTo.newMessage(this, userFrom, message);
+		sendMessageLatch.countDown();
+		return "Sent!";
 	}
 	
 	public void close() {

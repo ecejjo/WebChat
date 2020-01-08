@@ -44,7 +44,6 @@ public class Mejora4_1Test {
 		
 		long startTime = System.currentTimeMillis();
 		chat.sendMessage(user, "Hello!!");
-		chat.waitForMessageSent();
 		long endTime = System.currentTimeMillis();
 		System.out.println("DEBUG: Message took " + (endTime - startTime) + " milliseconds to run.");
 		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
