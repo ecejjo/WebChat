@@ -39,7 +39,7 @@ public class Mejora5_2closeChatTest {
 		
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 			// Comprobar que el chat recibido en el método 'newChat' se llama 'Chat'
-			assertTrue("The method 'newChat' should be invoked with 'Chat', but the value is "
+			assertTrue("The method 'chatClosed' should be invoked with 'ChatToClose', but the value is "
 					+ chatToCloseName[i], Objects.equals(chatToCloseName[0], "ChatToClose"));
 		}
 	}
