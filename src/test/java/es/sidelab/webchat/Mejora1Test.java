@@ -28,7 +28,7 @@ public class Mejora1Test {
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 
 		ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_USERS);
-		CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
+		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executor);
 
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 			final int userIndex = i;
@@ -37,8 +37,8 @@ public class Mejora1Test {
 
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 			try {
-				Future<String> f = completionService.take();
-				assertTrue("Thread execution did not return success", f.get().equals("Success"));
+				Future<Boolean> f = completionService.take();
+				assertTrue("Thread execution did not return success", f.get().equals(true));
 			} catch (ExecutionException e) {
 				assertTrue("Thread execution throwed ExecutionException:" + e.getMessage(), false);
 				throw e.getCause();
@@ -48,7 +48,7 @@ public class Mejora1Test {
 		}
 	}
 	
-	public String mejora1Thread(ChatManager chatManager, int userIndex) throws InterruptedException, TimeoutException {
+	public boolean mejora1Thread(ChatManager chatManager, int userIndex) throws InterruptedException, TimeoutException {
 		
 		TestUser user = new TestUser("user" + userIndex);
 		chatManager.newUser(user);
@@ -66,7 +66,7 @@ public class Mejora1Test {
 				System.out.println("User: " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
 			}
 		}
-		return "Success";
+		return true;
 	}
 
 }
