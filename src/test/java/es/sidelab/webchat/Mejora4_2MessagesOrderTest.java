@@ -33,16 +33,16 @@ public class Mejora4_2MessagesOrderTest {
 		Chat chat = chatManager.newChat("mejora4_2", 5, TimeUnit.SECONDS);
 		
 		TestUser user;
-		int i = 0;
-		do {
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
+			
 			user = new TestUser("user" + i) {
 				
 				int messageCounter = 0;
 				
 				@Override
-				public void newMessage(Chat chat, User user, String message) {
+				public void newMessage(Chat chat, User userFrom, String message) {
 					
-					String traceHeader = "newMessage(), " + user.getName() + ": "; 
+					String traceHeader = "newMessage(), from " + userFrom.getName() + " to " + this.getName() + ": "; 
 					System.out.println(traceHeader + "rightOrderFlag: " + rightOrderFlag);
 					
 					try {
@@ -54,7 +54,7 @@ public class Mejora4_2MessagesOrderTest {
 						e.printStackTrace();
 					}
 					
-					System.out.println(traceHeader + " - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
+					System.out.println(traceHeader + " - New message '" + message + "' from user " + userFrom.getName() + " in chat " + chat.getName());
 
 					try {
 						System.out.println(traceHeader + "messageCounter: " + messageCounter);
@@ -74,14 +74,12 @@ public class Mejora4_2MessagesOrderTest {
 				}
 			};
 			chat.addUser(user);
-			i++;
 		}
-		while(i < NUM_CONCURRENT_USERS);
 		
 		ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_USERS);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executor);
 		
-		final TestUser userFinal = user;
+		final TestUser userFinal = (TestUser) chat.getUser("user0");
 		completionService.submit(() -> mejora4_2Thread(chat, userFinal));
 		
 		try {
