@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Chat {
 
@@ -66,7 +67,7 @@ public class Chat {
 		ArrayList<User> usersInChat = new ArrayList<>(users.values());
 		
 		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
-		CompletionService<String> completionService = new ExecutorCompletionService<>(executorService);
+		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 		
 		// CountDownLatch must be created before any submit to avoid race conditions
 		sendMessageLatch = new CountDownLatch(usersInChat.size());
@@ -82,12 +83,22 @@ public class Chat {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		// Checks execution results (futures)
+		for (int i = 0; i < usersInChat.size(); i++) {
+			try {
+				Future<Boolean> f = completionService.take();
+				assert(f.get().equals(true));
+			} catch (Exception e) {
+				System.out.println("Thread execution throwed exception: " + e.getMessage());
+			}
+		}
 	}
 	
-	private String sendMessageThread(User userTo, User userFrom, String message) {
+	private boolean sendMessageThread(User userTo, User userFrom, String message) {
 		userTo.newMessage(this, userFrom, message);
 		sendMessageLatch.countDown();
-		return "Sent!";
+		return true;
 	}
 	
 	public void close() {
