@@ -9,7 +9,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class Chat {
 
@@ -17,10 +16,6 @@ public class Chat {
 	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
 
 	private ChatManager chatManager;
-	
-	private ArrayList<User> usersInChat;
-	private ArrayList<ExecutorService> executors;
-	private ArrayList<CompletionService<String>> completionServices;
 	
 	private CountDownLatch sendMessageLatch = new CountDownLatch(0);
 	
@@ -67,21 +62,19 @@ public class Chat {
 
 	public void sendMessage(User user, String message) {
 			
-		usersInChat = new ArrayList<>(users.values());
-		executors = new ArrayList<ExecutorService>(usersInChat.size());
-		completionServices = new ArrayList<CompletionService<String>>(usersInChat.size());
+		// Using a copy of users in chat to avoid concurrency problems.
+		ArrayList<User> usersInChat = new ArrayList<>(users.values());
+		
+		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+		CompletionService<String> completionService = new ExecutorCompletionService<>(executorService);
 		
 		// CountDownLatch must be created before any submit to avoid race conditions
 		sendMessageLatch = new CountDownLatch(usersInChat.size());
 		
 		for (int i = 0; i < usersInChat.size(); i++) {			
-			executors.add(i, Executors.newFixedThreadPool(1));			
-			completionServices.add(i, new ExecutorCompletionService<>(executors.get(i)));
-			
 			final int userIndex = i;
-			completionServices.get(i).submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
+			completionService.submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
 		}
-		
 		waitForMessageSent();
 	}
 	
@@ -97,18 +90,6 @@ public class Chat {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-	}
-	
-	// Additional function, not really used once coundDownLatch was introduced.
-	public void assertMessageWasSent() {
-		for (int i = 0; i < usersInChat.size(); i++) {
-			try {
-				Future<String> f = completionServices.get(i).take();
-				assert(f.get().equals("Sent!"));
-			} catch (Exception e) {
-				System.out.println("Thread execution throwed exception: " + e.getMessage());
-			}
 		}
 	}
 	
