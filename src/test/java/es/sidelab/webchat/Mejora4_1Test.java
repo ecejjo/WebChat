@@ -11,7 +11,7 @@ import es.codeurjc.webchat.ChatManager;
 import es.codeurjc.webchat.User;
 
 public class Mejora4_1Test {
-	
+
 	@Test
 	public void mejora4_1() throws Throwable {
 
@@ -20,10 +20,9 @@ public class Mejora4_1Test {
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_1", 5, TimeUnit.SECONDS);
-		
+
 		TestUser user;
-		int i = 0;
-		do {
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
 			user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
@@ -38,15 +37,14 @@ public class Mejora4_1Test {
 				}
 			};
 			chat.addUser(user);
-			i++;
 		}
-		while(i < NUM_CONCURRENT_USERS);
-		
+
+		user = (TestUser) chat.getUser("user1");
+
 		long startTime = System.currentTimeMillis();
 		chat.sendMessage(user, "Hello!!");
 		long endTime = System.currentTimeMillis();
 		System.out.println("DEBUG: Message took " + (endTime - startTime) + " milliseconds to run.");
 		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
 	}
-
 }
