@@ -79,14 +79,14 @@ public class Mejora4_2MessagesOrderTest {
 		while(i < NUM_CONCURRENT_USERS);
 		
 		ExecutorService executor = Executors.newFixedThreadPool(NUM_CONCURRENT_USERS);
-		CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
+		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executor);
 		
 		final TestUser userFinal = user;
 		completionService.submit(() -> mejora4_2Thread(chat, userFinal));
 		
 		try {
-			Future<String> f = completionService.take();
-			assertTrue("Thread execution did not return success", f.get().equals("Success"));
+			Future<Boolean> f = completionService.take();
+			assertTrue("Thread execution did not return success", f.get().equals(true));
 			assertTrue("Some message was received in wrong order", rightOrderFlag);
 		} catch (ExecutionException e) {
 			assertTrue("Thread execution throwed ExecutionException:" + e.getMessage(), false);
@@ -96,23 +96,19 @@ public class Mejora4_2MessagesOrderTest {
 		}		
 	}
 	
-	public String mejora4_2Thread(Chat chat, TestUser user) throws InterruptedException, TimeoutException, RuntimeException {
+	public boolean mejora4_2Thread(Chat chat, TestUser user) throws InterruptedException, TimeoutException, RuntimeException {
 
 		String traceHeader = "mejora4_2Thread(), " + user.getName() + ": "; 
 
 		final int NUM_MESSAGES = 5;
-		String result = "Success";
 
 		for (int i = 0; i < NUM_MESSAGES; i++) {
 
 			// if (i == 1) { continue; } // Forces an error!!
 
-			System.out.println(traceHeader + "Sending message ...");
+			System.out.println(traceHeader + "Sending message " + Integer.toString(i) + " ...");
 			chat.sendMessage(user, Integer.toString(i));			
 		}
-				
-		System.out.println(traceHeader + "result is: " + result);
-		return result;
+		return true;
 	}
-
 }
