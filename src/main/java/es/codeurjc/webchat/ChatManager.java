@@ -72,6 +72,10 @@ public class ChatManager {
 	
 	private void notifyUsersNewChat(Chat newChat) throws InterruptedException, TimeoutException {
 		
+		if (users.size() == 0) {
+			return;
+		}
+		
 		// Using a copy of users in chat to avoid concurrency problems.
 		ArrayList<User> usersInChat = new ArrayList<>(users.values());
 		
