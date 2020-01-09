@@ -13,7 +13,7 @@ import es.codeurjc.webchat.User;
 public class Mejora4_1NotificationsInParallelTest {
 	
 	@Test
-	public void mejora4_1newChat() throws Throwable {
+	public void mejora4_1_ChatManager_newChat() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -32,14 +32,50 @@ public class Mejora4_1NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("New chat'" + chat.getName()+ "' notification in user " + this.getName());
+					System.out.println("newChat '" + chat.getName()+ "' notification in user " + this.getName());
 				}
 			};
 			chatManager.newUser(user);
 		}
 		
 		long startTime = System.currentTimeMillis();
-		chatManager.newChat("mejora4_1newChat", 5, TimeUnit.SECONDS);
+		chatManager.newChat("mejora4_1_ChatManager_newChat", 5, TimeUnit.SECONDS);
+		long endTime = System.currentTimeMillis();
+		
+		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
+		assertTrue("newChat notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
+	}
+	
+	@Test
+	public void mejora4_1_ChatManager_closeChat() throws Throwable {
+
+		final int NUM_CONCURRENT_USERS = 4;
+		final int MAX_CHATS = 1;
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
+
+		TestUser user;
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
+			user = new TestUser("user" + i) {
+				@Override
+				public void chatClosed(Chat chat) {
+					System.out.println("chatClosed(): Starting ...");
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("chatClosed '" + chat.getName()+ "' notification in user " + this.getName());
+				}
+			};
+			chatManager.newUser(user);
+		}
+		
+		Chat chat = chatManager.newChat("mejora4_1_ChatManager_closeChat", 5, TimeUnit.SECONDS);
+		
+		long startTime = System.currentTimeMillis();
+		chatManager.closeChat(chat);
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
@@ -47,7 +83,7 @@ public class Mejora4_1NotificationsInParallelTest {
 	}
 
 	@Test
-	public void mejora4_1newMessage() throws Throwable {
+	public void mejora4_1_Chat_newMessage() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
