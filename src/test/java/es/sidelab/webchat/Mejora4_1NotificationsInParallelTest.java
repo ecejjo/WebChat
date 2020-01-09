@@ -81,6 +81,82 @@ public class Mejora4_1NotificationsInParallelTest {
 		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
 		assertTrue("newChat notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
 	}
+	
+	@Test
+	public void mejora4_1_Chat_addUser() throws Throwable {
+
+		final int NUM_CONCURRENT_USERS = 4;
+		final int MAX_CHATS = 1;
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
+		Chat chat = chatManager.newChat("mejora4_1_Chat_addUser", 5, TimeUnit.SECONDS);
+
+		TestUser user;
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
+			user = new TestUser("user" + i) {
+				@Override
+				public void newUserInChat(Chat chat, User user) {
+					System.out.println("newUserInChat(): Starting ...");
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("newUserInChat '" + user.getName() + " notification in chat " + chat.getName());
+				}
+			};
+			chatManager.newUser(user);
+			chat.addUser(user);
+		}
+
+		user = new TestUser("LastUserToAdd");
+
+		long startTime = System.currentTimeMillis();
+		chat.addUser(user);
+		long endTime = System.currentTimeMillis();
+		
+		System.out.println("DEBUG: newUserInChat notification took " + (endTime - startTime) + " milliseconds to run.");
+		assertTrue("newUserInChat notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
+	}
+
+	@Test
+	public void mejora4_1_Chat_removeUser() throws Throwable {
+
+		final int NUM_CONCURRENT_USERS = 4;
+		final int MAX_CHATS = 1;
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
+		Chat chat = chatManager.newChat("mejora4_1_Chat_removeUser", 5, TimeUnit.SECONDS);
+
+		TestUser user;
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
+			user = new TestUser("user" + i) {
+				@Override
+				public void userExitedFromChat(Chat chat, User user) {
+					System.out.println("userExitedFromChat(): Starting ...");
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("userExitedFromChat '" + user.getName() + " notification in chat " + chat.getName());
+				}
+			};
+			chatManager.newUser(user);
+			chat.addUser(user);
+		}
+
+		user = (TestUser) chat.getUser("user1");
+
+		long startTime = System.currentTimeMillis();
+		chat.removeUser(user);
+		long endTime = System.currentTimeMillis();
+		
+		System.out.println("DEBUG: newUserInChat notification took " + (endTime - startTime) + " milliseconds to run.");
+		assertTrue("newUserInChat notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
+	}
 
 	@Test
 	public void mejora4_1_Chat_newMessage() throws Throwable {
