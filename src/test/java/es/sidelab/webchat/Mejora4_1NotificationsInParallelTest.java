@@ -10,7 +10,7 @@ import es.codeurjc.webchat.Chat;
 import es.codeurjc.webchat.ChatManager;
 import es.codeurjc.webchat.User;
 
-public class Mejora4_1Test {
+public class Mejora4_1NotificationsInParallelTest {
 
 	@Test
 	public void mejora4_1() throws Throwable {
