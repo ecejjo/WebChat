@@ -11,15 +11,49 @@ import es.codeurjc.webchat.ChatManager;
 import es.codeurjc.webchat.User;
 
 public class Mejora4_1NotificationsInParallelTest {
-
+	
 	@Test
-	public void mejora4_1() throws Throwable {
+	public void mejora4_1newChat() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
-		Chat chat = chatManager.newChat("mejora4_1", 5, TimeUnit.SECONDS);
+
+		TestUser user;
+		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
+			user = new TestUser("user" + i) {
+				@Override
+				public void newChat(Chat chat) {
+					System.out.println("newChat(): Starting ...");
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("New chat'" + chat.getName()+ "' notification in user " + this.getName());
+				}
+			};
+			chatManager.newUser(user);
+		}
+		
+		long startTime = System.currentTimeMillis();
+		chatManager.newChat("mejora4_1newChat", 5, TimeUnit.SECONDS);
+		long endTime = System.currentTimeMillis();
+		
+		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
+		assertTrue("newChat notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
+	}
+
+	@Test
+	public void mejora4_1newMessage() throws Throwable {
+
+		final int NUM_CONCURRENT_USERS = 4;
+		final int MAX_CHATS = 1;
+
+		ChatManager chatManager = new ChatManager(MAX_CHATS);
+		Chat chat = chatManager.newChat("mejora4_1newMessage", 5, TimeUnit.SECONDS);
 
 		TestUser user;
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
@@ -36,6 +70,7 @@ public class Mejora4_1NotificationsInParallelTest {
 					System.out.println("New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
+			chatManager.newUser(user);
 			chat.addUser(user);
 		}
 
@@ -44,7 +79,8 @@ public class Mejora4_1NotificationsInParallelTest {
 		long startTime = System.currentTimeMillis();
 		chat.sendMessage(user, "Hello!!");
 		long endTime = System.currentTimeMillis();
-		System.out.println("DEBUG: Message took " + (endTime - startTime) + " milliseconds to run.");
-		assertTrue("Message took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
+		
+		System.out.println("DEBUG: newMessage notification took " + (endTime - startTime) + " milliseconds to run.");
+		assertTrue("newMessage notification took more than 1.5 seconds to sent and receive.", (endTime - startTime) < 1500);
 	}
 }
