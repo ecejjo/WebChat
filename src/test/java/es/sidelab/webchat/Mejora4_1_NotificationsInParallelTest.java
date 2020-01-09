@@ -10,10 +10,10 @@ import es.codeurjc.webchat.Chat;
 import es.codeurjc.webchat.ChatManager;
 import es.codeurjc.webchat.User;
 
-public class Mejora4_1NotificationsInParallelTest {
+public class Mejora4_1_NotificationsInParallelTest {
 	
 	@Test
-	public void mejora4_1_ChatManager_newChat() throws Throwable {
+	public void mejora_4_1_1_ChatManager_newChat() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -47,7 +47,7 @@ public class Mejora4_1NotificationsInParallelTest {
 	}
 	
 	@Test
-	public void mejora4_1_ChatManager_closeChat() throws Throwable {
+	public void mejora_4_1_2_ChatManager_closeChat() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -83,7 +83,7 @@ public class Mejora4_1NotificationsInParallelTest {
 	}
 	
 	@Test
-	public void mejora4_1_Chat_addUser() throws Throwable {
+	public void mejora_4_1_3_Chat_addUser() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -121,7 +121,7 @@ public class Mejora4_1NotificationsInParallelTest {
 	}
 
 	@Test
-	public void mejora4_1_Chat_removeUser() throws Throwable {
+	public void mejora_4_1_4_Chat_removeUser() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
@@ -159,7 +159,7 @@ public class Mejora4_1NotificationsInParallelTest {
 	}
 
 	@Test
-	public void mejora4_1_Chat_newMessage() throws Throwable {
+	public void mejora_4_1_5_Chat_newMessage() throws Throwable {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
