@@ -77,7 +77,7 @@ public class ChatManager {
 		}
 		
 		// Using a copy of users in chat to avoid concurrency problems.
-		ArrayList<User> usersInChat = new ArrayList<>(users.values());
+		ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
 		
 		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -85,9 +85,8 @@ public class ChatManager {
 		// CountDownLatch must be created before any submit to avoid race conditions
 		newChatLatch = new CountDownLatch(usersInChat.size());
 		
-		for (int i = 0; i < usersInChat.size(); i++) {			
-			final int userIndex = i;
-			completionService.submit(() -> newChatThread(usersInChat.get(userIndex), newChat));
+		for(User u : usersInChat.values()) {
+			completionService.submit(() -> newChatThread(u, newChat));
 		}
 		
 		try {
