@@ -25,14 +25,13 @@ public class Mejora4_1_NotificationsInParallelTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void newChat(Chat chat) {
-					System.out.println("newChat(): Starting ...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("newChat '" + chat.getName()+ "' notification in user " + this.getName());
+					System.out.println(" - New chat " + chat.getName());
 				}
 			};
 			chatManager.newUser(user);
@@ -59,14 +58,13 @@ public class Mejora4_1_NotificationsInParallelTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void chatClosed(Chat chat) {
-					System.out.println("chatClosed(): Starting ...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("chatClosed '" + chat.getName()+ "' notification in user " + this.getName());
+					System.out.println(" - chatClosed '" + chat.getName()+ "' notification in user " + this.getName());
 				}
 			};
 			chatManager.newUser(user);
@@ -102,7 +100,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("New user " + user.getName() + " in chat " + chat.getName());
+					System.out.println(" - New user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
 			chatManager.newUser(user);
@@ -134,14 +132,13 @@ public class Mejora4_1_NotificationsInParallelTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void userExitedFromChat(Chat chat, User user) {
-					System.out.println("userExitedFromChat(): Starting ...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("userExitedFromChat '" + user.getName() + " notification in chat " + chat.getName());
+					System.out.println(" - User " + user.getName() + " exited from chat " + chat.getName());
 				}
 			};
 			chatManager.newUser(user);
@@ -172,14 +169,13 @@ public class Mejora4_1_NotificationsInParallelTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
-					System.out.println("newMessage(): Starting ...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
+					System.out.println(" - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
 			chatManager.newUser(user);
