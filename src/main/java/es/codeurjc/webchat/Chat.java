@@ -18,6 +18,7 @@ public class Chat {
 
 	private ChatManager chatManager;
 	
+	private CountDownLatch addUserLatch = new CountDownLatch(0);
 	private CountDownLatch sendMessageLatch = new CountDownLatch(0);
 	
 	public Chat(ChatManager chatManager, String name) {
@@ -30,16 +31,54 @@ public class Chat {
 	}
 
 	public void addUser(User user) {
+		
+		if (users.size() == 0) {
+			users.put(user.getName(), user);
+			return;
+		}
+		
+		// Using a copy of users in chat to avoid concurrency problems.
+		ArrayList<User> usersInChat = new ArrayList<>(users.values());
+		
+		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+		
+		// CountDownLatch must be created before any submit to avoid race conditions
+		addUserLatch= new CountDownLatch(usersInChat.size());
+		
 		// putIfAbsent() returns:
 		// the previous value associated with the specified key,
 		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) == null) {
 			for(User u : users.values()){
 				if (u != user) {
-					u.newUserInChat(this, user);
+					completionService.submit(() -> addUserThread(u));
 				}
-			}			
+			}
 		}
+		
+		try {
+			addUserLatch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Checks execution results (futures)
+		for (int i = 0; i < usersInChat.size(); i++) {
+			try {
+				Future<Boolean> f = completionService.take();
+				assert(f.get().equals(true));
+			} catch (Exception e) {
+				System.out.println("Thread execution throwed exception: " + e.getMessage());
+			}
+		}
+	}
+	
+	private boolean addUserThread(User user) {
+		user.newUserInChat(this, user);
+		addUserLatch.countDown();
+		return true;
 	}
 
 	public void removeUser(User user) {

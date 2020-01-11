@@ -96,14 +96,13 @@ public class Mejora4_1_NotificationsInParallelTest {
 			user = new TestUser("user" + i) {
 				@Override
 				public void newUserInChat(Chat chat, User user) {
-					System.out.println("newUserInChat(): Starting ...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println("newUserInChat '" + user.getName() + " notification in chat " + chat.getName());
+					System.out.println("New user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
 			chatManager.newUser(user);
@@ -111,6 +110,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 		}
 
 		user = new TestUser("LastUserToAdd");
+		chatManager.newUser(user);
 
 		long startTime = System.currentTimeMillis();
 		chat.addUser(user);
