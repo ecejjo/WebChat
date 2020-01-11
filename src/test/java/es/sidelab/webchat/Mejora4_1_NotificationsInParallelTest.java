@@ -64,7 +64,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					System.out.println(" - chatClosed '" + chat.getName()+ "' notification in user " + this.getName());
+					System.out.println(" - Chat " + chat.getName() + " closed ");
 				}
 			};
 			chatManager.newUser(user);

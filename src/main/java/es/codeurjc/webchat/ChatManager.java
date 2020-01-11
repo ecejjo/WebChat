@@ -1,6 +1,5 @@
 package es.codeurjc.webchat;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletionService;
@@ -23,6 +22,8 @@ public class ChatManager {
 	private final Semaphore maxChatsSemaphore;
 	
 	private CountDownLatch newChatLatch = new CountDownLatch(0);
+	private CountDownLatch closeChatLatch = new CountDownLatch(0);
+
 	
 	public ChatManager(int maxChats) {
 		this.maxChats = maxChats;
@@ -121,10 +122,42 @@ public class ChatManager {
 		}
 		
 		this.maxChatsSemaphore.release();
-
-		for(User user : users.values()){
-			user.chatClosed(removedChat);
+		
+		// Using a copy of users in chat to avoid concurrency problems.
+		ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
+		
+		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+		
+		// CountDownLatch must be created before any submit to avoid race conditions
+		closeChatLatch = new CountDownLatch(usersInChat.size());
+		
+		for(User u : usersInChat.values()) {
+			completionService.submit(() -> closeChatThread(u, removedChat));
 		}
+		
+		try {
+			newChatLatch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		// Checks execution results (futures)
+		for (int i = 0; i < usersInChat.size(); i++) {
+			try {
+				Future<Boolean> f = completionService.take();
+				assert(f.get().equals(true));
+			} catch (Exception e) {
+				System.out.println("Thread execution throwed exception: " + e.getMessage());
+			}
+		}
+	}
+	
+	public boolean closeChatThread(User user, Chat removedChat) {
+		user.chatClosed(removedChat);
+		closeChatLatch.countDown();
+		return true;
 	}
 
 	public Collection<Chat> getChats() {
