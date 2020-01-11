@@ -84,32 +84,35 @@ public class Chat {
 		if (users.remove(user.getName()) != null) {
 			
 			// Using a copy of users in chat to avoid concurrency problems.
-			ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);;
+			ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
+			
+			if (usersInChat.size() != 0) {
+				
+				ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+				CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 
-			ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
-			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+				// CountDownLatch must be created before any submit to avoid race conditions
+				removeUserLatch = new CountDownLatch(usersInChat.size());
 
-			// CountDownLatch must be created before any submit to avoid race conditions
-			removeUserLatch = new CountDownLatch(usersInChat.size());
+				for(User u : usersInChat.values()){
+					completionService.submit(() -> removeUserThread(u, user));
+				}
 
-			for(User u : usersInChat.values()){
-				completionService.submit(() -> removeUserThread(u, user));
-			}
-
-			try {
-				removeUserLatch.await();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			// Checks execution results (futures)
-			for (int i = 0; i < usersInChat.size(); i++) {
 				try {
-					Future<Boolean> f = completionService.take();
-					assert(f.get().equals(true));
-				} catch (Exception e) {
-					System.out.println("Thread execution throwed exception: " + e.getMessage());
+					removeUserLatch.await();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				// Checks execution results (futures)
+				for (int i = 0; i < usersInChat.size(); i++) {
+					try {
+						Future<Boolean> f = completionService.take();
+						assert(f.get().equals(true));
+					} catch (Exception e) {
+						System.out.println("Thread execution throwed exception: " + e.getMessage());
+					}
 				}
 			}
 		}

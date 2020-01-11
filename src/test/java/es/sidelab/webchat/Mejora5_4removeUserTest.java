@@ -34,7 +34,7 @@ public class Mejora5_4removeUserTest {
 			users[i] = new TestUser("user" + i) {
 				@Override
 				public void userExitedFromChat(Chat chat, User user) {
-					System.out.println("User " + user.getName() + " exited from chat " + chat.getName());
+					System.out.println(" - User " + user.getName() + " exited from chat " + chat.getName());
 					chatName[final_i] = chat.getName();
 					userName[final_i] = user.getName();
 				}
@@ -44,15 +44,11 @@ public class Mejora5_4removeUserTest {
 		
 		// Users are removed from chat
 		for (int userRemoved = 0; userRemoved < NUM_CONCURRENT_USERS; userRemoved++) {
-			
-			System.out.println("userRemoved is:" + userRemoved);
 
 			chat.removeUser(users[userRemoved]);
 
 			// Only remaining users in chat are notified
 			for (int userNotified = userRemoved + 1; userNotified < NUM_CONCURRENT_USERS; userNotified++) {
-				
-				System.out.println("userNotified is:" + userNotified);
 
 				assertTrue("The method 'userExitedFromChat' should be invoked with 'Chat', but the value is "
 						+ chatName[userNotified], Objects.equals(chatName[userNotified], "Chat"));
