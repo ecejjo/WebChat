@@ -1,6 +1,5 @@
 package es.codeurjc.webchat;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletionService;
@@ -31,46 +30,42 @@ public class Chat {
 	}
 
 	public void addUser(User user) {
-		
-		if (users.size() == 0) {
-			users.put(user.getName(), user);
-			return;
-		}
-		
-		// Using a copy of users in chat to avoid concurrency problems.
-		ArrayList<User> usersInChat = new ArrayList<>(users.values());
-		
-		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
-		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
-		
-		// CountDownLatch must be created before any submit to avoid race conditions
-		addUserLatch= new CountDownLatch(usersInChat.size());
-		
+				
 		// putIfAbsent() returns:
 		// the previous value associated with the specified key,
 		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) == null) {
-			for(User u : users.values()){
+
+			// Using a copy of users in chat to avoid concurrency problems.
+			ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);;
+
+			ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+
+			// CountDownLatch must be created before any submit to avoid race conditions
+			addUserLatch = new CountDownLatch(usersInChat.size() - 1);
+
+			for(User u : usersInChat.values()){
 				if (u != user) {
 					completionService.submit(() -> addUserThread(u));
 				}
 			}
-		}
-		
-		try {
-			addUserLatch.await();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		// Checks execution results (futures)
-		for (int i = 0; i < usersInChat.size(); i++) {
+
 			try {
-				Future<Boolean> f = completionService.take();
-				assert(f.get().equals(true));
-			} catch (Exception e) {
-				System.out.println("Thread execution throwed exception: " + e.getMessage());
+				addUserLatch.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			// Checks execution results (futures)
+			for (int i = 0; i < usersInChat.size() - 1; i++) {
+				try {
+					Future<Boolean> f = completionService.take();
+					assert(f.get().equals(true));
+				} catch (Exception e) {
+					System.out.println("Thread execution throwed exception: " + e.getMessage());
+				}
 			}
 		}
 	}
@@ -103,7 +98,7 @@ public class Chat {
 	public void sendMessage(User user, String message) {
 			
 		// Using a copy of users in chat to avoid concurrency problems.
-		ArrayList<User> usersInChat = new ArrayList<>(users.values());
+		ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);;
 		
 		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -111,9 +106,8 @@ public class Chat {
 		// CountDownLatch must be created before any submit to avoid race conditions
 		sendMessageLatch = new CountDownLatch(usersInChat.size());
 		
-		for (int i = 0; i < usersInChat.size(); i++) {			
-			final int userIndex = i;
-			completionService.submit(() -> sendMessageThread(usersInChat.get(userIndex), user, message));
+		for(User u : usersInChat.values()) {
+			completionService.submit(() -> sendMessageThread(u, user, message));
 		}
 		
 		try {
