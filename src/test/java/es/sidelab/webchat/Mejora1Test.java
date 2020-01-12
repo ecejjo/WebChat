@@ -59,14 +59,12 @@ public class Mejora1Test {
 			System.out.println("Running..." + " userIndex #" + userIndex + " userIteration #" + userIteration);
 
 			Chat chat = chatManager.newChat("Chat" + userIteration, 5, TimeUnit.SECONDS);
-			
 			chat.addUser(user);
-									
+
 			for (User userInChat : chat.getUsers()) {
-				System.out.println("User: " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
+				System.out.println("mejora1Thread(): User " + userInChat.getName() + " is in chat " + chat.getName() +  ".");
 			}
 		}
 		return true;
 	}
-
 }
