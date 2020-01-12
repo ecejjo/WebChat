@@ -33,7 +33,7 @@ public class Chat {
 		return name;
 	}
 
-	public void addUser(User user) throws TimeoutException {
+	public synchronized void addUser(User user) throws TimeoutException {
 		
 		String traceHead = new String();
 		traceHead = "Chat::addUser(): chat: " + this.name + " user: " + user.getName() + ": ";

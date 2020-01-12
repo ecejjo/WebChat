@@ -73,7 +73,7 @@ public class ChatManager {
 		}
 	}
 	
-	private void notifyUsersNewChat(Chat newChat) throws InterruptedException, TimeoutException {
+	private synchronized void notifyUsersNewChat(Chat newChat) throws InterruptedException, TimeoutException {
 		
 		if (users.size() == 0) {
 			return;
