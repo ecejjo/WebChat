@@ -21,6 +21,7 @@ public class ChatManager {
 	private int maxChats;	
 	private final Semaphore maxChatsSemaphore;
 	
+	private final int AWAIT_TIMEOUT = 2;
 	private CountDownLatch newChatLatch = new CountDownLatch(0);
 	private CountDownLatch closeChatLatch = new CountDownLatch(0);
 
@@ -56,6 +57,7 @@ public class ChatManager {
 				}
 				// Chat already existed
 				else {
+					System.out.println("chatManager::newChat(): chat already exists: " + name +  ".");
 					this.maxChatsSemaphore.release();
 					return chats.get(name);				
 				}
@@ -91,7 +93,10 @@ public class ChatManager {
 		}
 		
 		try {
-			newChatLatch.await();
+			if (newChatLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
+				System.out.println("notifyUsersNewChat(): timeout in newChatLatch.await()");
+				throw new TimeoutException ("timeout in newChatLatch.await()");
+			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -114,7 +119,7 @@ public class ChatManager {
 		return true;
 	}
 
-	public void closeChat(Chat chat) {
+	public void closeChat(Chat chat) throws TimeoutException {
 		Chat removedChat = chats.remove(chat.getName());
 		if (removedChat == null) {
 			throw new IllegalArgumentException("Trying to remove an unknown chat with name \'"
@@ -122,6 +127,10 @@ public class ChatManager {
 		}
 		
 		this.maxChatsSemaphore.release();
+		
+		if (users.size() == 0) {
+			return;
+		}
 		
 		// Using a copy of users in chat to avoid concurrency problems.
 		ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
@@ -137,7 +146,10 @@ public class ChatManager {
 		}
 		
 		try {
-			newChatLatch.await();
+			if (closeChatLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
+				System.out.println("closeChat(): timeout in closeChatLatch.await()");
+				throw new TimeoutException ("timeout in closeChatLatch.await()");
+			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
