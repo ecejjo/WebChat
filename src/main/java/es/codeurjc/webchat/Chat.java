@@ -42,18 +42,15 @@ public class Chat {
 		// the previous value associated with the specified key,
 		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) == null) {
-
-			// Using a copy of users in chat to avoid concurrency problems.
-			ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);;
-
-			ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+			ExecutorService executorService = Executors.newFixedThreadPool(10);
 			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 
 			// CountDownLatch must be created before any submit to avoid race conditions
-			addUserLatch = new CountDownLatch(usersInChat.size() - 1);
+			int existingUsers = users.size() - 1;
+			addUserLatch = new CountDownLatch(existingUsers);
 			System.out.println(traceHead + "addUserLatch set with: " + addUserLatch.getCount());
 
-			for(User u : usersInChat.values()){
+			for(User u : users.values()){
 				if (u != user) {
 					completionService.submit(() -> addUserThread(u, user));
 				}
@@ -69,7 +66,7 @@ public class Chat {
 				e.printStackTrace();
 			}
 			// Checks execution results (futures)
-			for (int i = 0; i < usersInChat.size() - 1; i++) {
+			for (int i = 0; i < existingUsers - 1; i++) {
 				try {
 					Future<Boolean> f = completionService.take();
 					assert(f.get().equals(true));
@@ -83,54 +80,50 @@ public class Chat {
 	private boolean addUserThread(User user, User userNew) {
 		user.newUserInChat(this, userNew);
 		addUserLatch.countDown();
-		System.out.println("addUserThread(): addUserLatch.getcount(): " + addUserLatch.getCount());
 		return true;
 	}
 
-	public void removeUser(User user) throws TimeoutException {
+	public synchronized void removeUser(User user) throws TimeoutException {
 		// remove() returns:
 		// the previous value associated with key,
 		// or null if there was no mapping for key
 		if (users.remove(user.getName()) != null) {
-			
-			// Using a copy of users in chat to avoid concurrency problems.
-			ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
-			
-			if (usersInChat.size() != 0) {
-				
-				ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
-				CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 
-				// CountDownLatch must be created before any submit to avoid race conditions
-				removeUserLatch = new CountDownLatch(usersInChat.size());
 
-				for(User u : usersInChat.values()){
-					completionService.submit(() -> removeUserThread(u, user));
+			ExecutorService executorService = Executors.newFixedThreadPool(10);
+			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+
+			// CountDownLatch must be created before any submit to avoid race conditions
+			int existingUsers = users.size();			
+			removeUserLatch = new CountDownLatch(existingUsers);
+
+			for(User u : users.values()){
+				completionService.submit(() -> removeUserThread(u, user));
+			}
+
+			try {
+				if (removeUserLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
+					System.out.println("removeUser(): timeout in removeUserLatch.await()");
+					throw new TimeoutException ("timeout in removeUserLatch.await()");
 				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
+			// Checks execution results (futures)
+			for (int i = 0; i < existingUsers; i++) {
 				try {
-					if (removeUserLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
-						System.out.println("removeUser(): timeout in removeUserLatch.await()");
-						throw new TimeoutException ("timeout in removeUserLatch.await()");
-					}
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				// Checks execution results (futures)
-				for (int i = 0; i < usersInChat.size(); i++) {
-					try {
-						Future<Boolean> f = completionService.take();
-						assert(f.get().equals(true));
-					} catch (Exception e) {
-						System.out.println("Thread execution throwed exception: " + e.getMessage());
-					}
+					Future<Boolean> f = completionService.take();
+					assert(f.get().equals(true));
+				} catch (Exception e) {
+					System.out.println("Thread execution throwed exception: " + e.getMessage());
 				}
 			}
+
 		}
 	}
-	
+
 	private boolean removeUserThread(User user, User userExited) {
 		user.userExitedFromChat(this, userExited);
 		removeUserLatch.countDown();
@@ -147,17 +140,15 @@ public class Chat {
 	}
 
 	public void sendMessage(User user, String message) {
-			
-		// Using a copy of users in chat to avoid concurrency problems.
-		ConcurrentHashMap<String, User> usersInChat = new ConcurrentHashMap<>(users);
-		
-		ExecutorService executorService = Executors.newFixedThreadPool(usersInChat.size());
+
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 		
 		// CountDownLatch must be created before any submit to avoid race conditions
-		sendMessageLatch = new CountDownLatch(usersInChat.size());
+		int existingUsers = users.size();		
+		sendMessageLatch = new CountDownLatch(existingUsers);
 		
-		for(User u : usersInChat.values()) {
+		for(User u : users.values()) {
 			completionService.submit(() -> sendMessageThread(u, user, message));
 		}
 		
@@ -171,7 +162,7 @@ public class Chat {
 		}
 		
 		// Checks execution results (futures)
-		for (int i = 0; i < usersInChat.size(); i++) {
+		for (int i = 0; i < existingUsers; i++) {
 			try {
 				Future<Boolean> f = completionService.take();
 				assert(f.get().equals(true));
