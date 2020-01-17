@@ -2,6 +2,7 @@ package es.sidelab.webchat;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
@@ -160,13 +161,14 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
-
+		CountDownLatch latch = new CountDownLatch(NUM_CONCURRENT_USERS);
+				
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_1newMessage", 5, TimeUnit.SECONDS);
 
-		TestUser user;
+
 		for (int i = 0; i < NUM_CONCURRENT_USERS; i++) {
-			user = new TestUser("user" + i) {
+			User user = new TestUser("user" + i) {
 				@Override
 				public void newMessage(Chat chat, User user, String message) {
 					try {
@@ -175,17 +177,20 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					latch.countDown();
 					System.out.println(" - New message '" + message + "' from user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
+			
 			chatManager.newUser(user);
 			chat.addUser(user);
 		}
 
-		user = (TestUser) chat.getUser("user1");
+		User user = (TestUser) chat.getUser("user0");
 
 		long startTime = System.currentTimeMillis();
 		chat.sendMessage(user, "Hello!!");
+		latch.await();
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newMessage notification took " + (endTime - startTime) + " milliseconds to run.");
