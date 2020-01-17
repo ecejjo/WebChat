@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,8 +12,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.sql.rowset.spi.SyncResolver;
-
 public class ChatManager {
 
 	private ConcurrentHashMap<String, Chat> chats = new ConcurrentHashMap<>();
@@ -22,11 +19,6 @@ public class ChatManager {
 	
 	private int maxChats;	
 	private final Semaphore maxChatsSemaphore;
-	
-	private final int AWAIT_TIMEOUT = 2;
-	private CountDownLatch newChatLatch = new CountDownLatch(0);
-	private CountDownLatch closeChatLatch = new CountDownLatch(0);
-
 	
 	public ChatManager(int maxChats) {
 		this.maxChats = maxChats;
@@ -75,26 +67,13 @@ public class ChatManager {
 		}
 	}
 	
-	private synchronized void notifyUsersNewChat(Chat newChat) throws InterruptedException, TimeoutException {
+	private synchronized void notifyUsersNewChat(Chat newChat) throws InterruptedException {
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 		
-		// CountDownLatch must be created before any submit to avoid race conditions
-		int existingUsers = users.size();
-		newChatLatch = new CountDownLatch(existingUsers);
-		
+		int existingUsers = users.size();		
 		for(User u : users.values()) {
 			completionService.submit(() -> newChatThread(u, newChat));
-		}
-		
-		try {
-			if (newChatLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
-				System.out.println("notifyUsersNewChat(): timeout in newChatLatch.await()");
-				throw new TimeoutException ("timeout in newChatLatch.await()");
-			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
 		// Checks execution results (futures)
@@ -110,11 +89,10 @@ public class ChatManager {
 	
 	private boolean newChatThread(User user, Chat newChat) {
 		user.newChat(newChat);
-		newChatLatch.countDown();
 		return true;
 	}
 
-	public synchronized void closeChat(Chat chat) throws TimeoutException {
+	public synchronized void closeChat(Chat chat) {
 		Chat removedChat = chats.remove(chat.getName());
 		if (removedChat == null) {
 			throw new IllegalArgumentException("Trying to remove an unknown chat with name \'"
@@ -128,20 +106,9 @@ public class ChatManager {
 		
 		// CountDownLatch must be created before any submit to avoid race conditions
 		int existingUsers = users.size();		
-		closeChatLatch = new CountDownLatch(existingUsers);
 		
 		for(User u : users.values()) {
 			completionService.submit(() -> closeChatThread(u, removedChat));
-		}
-		
-		try {
-			if (closeChatLatch.await(AWAIT_TIMEOUT, TimeUnit.SECONDS) == false) {
-				System.out.println("closeChat(): timeout in closeChatLatch.await()");
-				throw new TimeoutException ("timeout in closeChatLatch.await()");
-			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
 		// Checks execution results (futures)
@@ -157,7 +124,6 @@ public class ChatManager {
 	
 	public boolean closeChatThread(User user, Chat removedChat) {
 		user.chatClosed(removedChat);
-		closeChatLatch.countDown();
 		return true;
 	}
 
