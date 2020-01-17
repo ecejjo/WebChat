@@ -16,19 +16,16 @@ public class ChatManager {
 
 	private ConcurrentHashMap<String, Chat> chats = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
-	
+
 	private int maxChats;	
 	private final Semaphore maxChatsSemaphore;
-	
+
 	public ChatManager(int maxChats) {
 		this.maxChats = maxChats;
 		this.maxChatsSemaphore = new Semaphore(this.maxChats, true);
 	}
 
 	public void newUser(User user) {
-		// putIfAbsent() returns:
-		// the previous value associated with the specified key,
-		// or null if there was no mapping for the key
 		if (users.putIfAbsent(user.getName(), user) != null) {
 			throw new IllegalArgumentException("There is already a user with name \'"
 					+ user.getName() + "\'");				
@@ -42,14 +39,10 @@ public class ChatManager {
 
 				Chat newChat = new Chat(this, name);
 
-				// putIfAbsent() returns:
-				// the previous value associated with the specified key,
-				// or null if there was no mapping for the key
 				if (chats.putIfAbsent(name, newChat) == null) {
 					notifyUsersNewChat(newChat);
 					return newChat;
 				}
-				// Chat already existed
 				else {
 					System.out.println("chatManager::newChat(): chat already exists: " + name +  ".");
 					this.maxChatsSemaphore.release();
@@ -66,16 +59,20 @@ public class ChatManager {
 			throw new TimeoutException("InterruptedException.");
 		}
 	}
-	
-	private synchronized void notifyUsersNewChat(Chat newChat) throws InterruptedException {
+
+	private void notifyUsersNewChat(Chat newChat) throws InterruptedException {
+
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
-		
-		int existingUsers = users.size();		
-		for(User u : users.values()) {
-			completionService.submit(() -> newChatThread(u, newChat));
+
+		int existingUsers;
+		synchronized(users) {
+			existingUsers = users.size();		
+			for(User u : users.values()) {
+				completionService.submit(() -> newChatThread(u, newChat));
+			}
 		}
-		
+
 		// Checks execution results (futures)
 		for (int i = 0; i < existingUsers; i++) {
 			try {
@@ -86,29 +83,31 @@ public class ChatManager {
 			}
 		}
 	}
-	
+
 	private boolean newChatThread(User user, Chat newChat) {
 		user.newChat(newChat);
 		return true;
 	}
 
-	public synchronized void closeChat(Chat chat) {
+	public void closeChat(Chat chat) {
 		Chat removedChat = chats.remove(chat.getName());
 		if (removedChat == null) {
 			throw new IllegalArgumentException("Trying to remove an unknown chat with name \'"
 					+ chat.getName() + "\'");
 		}
-		
+
 		this.maxChatsSemaphore.release();
-		
+
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
-		
-		// CountDownLatch must be created before any submit to avoid race conditions
-		int existingUsers = users.size();		
-		
-		for(User u : users.values()) {
-			completionService.submit(() -> closeChatThread(u, removedChat));
+
+		int existingUsers;
+		synchronized(users) {
+			existingUsers = users.size();		
+
+			for(User u : users.values()) {
+				completionService.submit(() -> closeChatThread(u, removedChat));
+			}
 		}
 		
 		// Checks execution results (futures)
@@ -121,7 +120,7 @@ public class ChatManager {
 			}
 		}
 	}
-	
+
 	public boolean closeChatThread(User user, Chat removedChat) {
 		user.chatClosed(removedChat);
 		return true;

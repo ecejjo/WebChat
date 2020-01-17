@@ -16,7 +16,7 @@ public class Chat {
 	private ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
 
 	private ChatManager chatManager;
-	
+
 	public Chat(ChatManager chatManager, String name) {
 		this.chatManager = chatManager;
 		this.name = name;
@@ -26,31 +26,32 @@ public class Chat {
 		return name;
 	}
 
-	public synchronized void addUser(User user) {
-		// putIfAbsent() returns:
-		// the previous value associated with the specified key,
-		// or null if there was no mapping for the key
+	public void addUser(User user) {
+		int existingUsers;
+		User userAdded;
 
-		if (users.putIfAbsent(user.getName(), user) == null) {
-			int existingUsers = users.size() - 1;
+		synchronized(users){
+			userAdded = users.putIfAbsent(user.getName(), user);	
+			existingUsers = users.size()-1;
+		}
 
+		if (userAdded == null) {
 			ExecutorService executorService = Executors.newFixedThreadPool(10);
 			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 
-			for(User u : users.values()){
-				if (u != user) {
-					completionService.submit(() -> addUserThread(u, user));
+			synchronized(users){
+				for(User u : users.values()){
+					if (u != user) {
+						completionService.submit(() -> addUserThread(u, user));
+					}
 				}
 			}
 
 			// Checks execution results (futures)
 			for (int i = 0; i < existingUsers; i++) {				
 				try {
-
 					Future<Boolean> f = completionService.take();
-
 					assert(f.get().equals(true));
-
 				} catch (Exception e) {
 					System.out.println("Thread execution throwed exception: " + e.getMessage());
 				}
@@ -63,21 +64,25 @@ public class Chat {
 		return true;
 	}
 
-	public synchronized void removeUser(User user) {
-		// remove() returns:
-		// the previous value associated with key,
-		// or null if there was no mapping for key
-		if (users.remove(user.getName()) != null) {
+	public void removeUser(User user) {
+		int existingUsers;
+		User userRemoved;
 
-			int existingUsers = users.size();
+		synchronized(users){
+			userRemoved = users.remove(user.getName());	
+			existingUsers = users.size();
+		}
+
+		if (userRemoved != null) {
+			existingUsers = users.size();
 
 			ExecutorService executorService = Executors.newFixedThreadPool(10);
 			CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
 
-			// CountDownLatch must be created before any submit to avoid race conditions
-
-			for(User u : users.values()){
-				completionService.submit(() -> removeUserThread(u, user));
+			synchronized(users){
+				for(User u : users.values()){
+					completionService.submit(() -> removeUserThread(u, user));
+				}
 			}
 
 			// Checks execution results (futures)
@@ -108,15 +113,20 @@ public class Chat {
 	}
 
 	public void sendMessage(User user, String message) {
-		int existingUsers = users.size();
+		int existingUsers;
+		synchronized(users) {
+			existingUsers = users.size();
+		}
 
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
-						
-		for(User u : users.values()) {
-			completionService.submit(() -> sendMessageThread(u, user, message));
+
+		synchronized(users) {
+			for(User u : users.values()) {
+				completionService.submit(() -> sendMessageThread(u, user, message));
+			}
 		}
-				
+
 		// Checks execution results (futures)
 		for (int i = 0; i < existingUsers; i++) {
 			try {
@@ -127,12 +137,12 @@ public class Chat {
 			}
 		}
 	}
-	
+
 	private boolean sendMessageThread(User userTo, User userFrom, String message) {
 		userTo.newMessage(this, userFrom, message);
 		return true;
 	}
-	
+
 	public void close() throws TimeoutException {
 		this.chatManager.closeChat(this);
 	}
