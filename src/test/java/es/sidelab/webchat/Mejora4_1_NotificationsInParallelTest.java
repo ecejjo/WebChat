@@ -18,6 +18,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
+		CountDownLatch latch = new CountDownLatch(NUM_CONCURRENT_USERS);
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 
@@ -32,6 +33,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					latch.countDown();
 					System.out.println(" - New chat " + chat.getName());
 				}
 			};
@@ -40,6 +42,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 		
 		long startTime = System.currentTimeMillis();
 		chatManager.newChat("mejora4_1_ChatManager_newChat", 5, TimeUnit.SECONDS);
+		latch.await();
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
@@ -51,6 +54,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
+		CountDownLatch latch = new CountDownLatch(NUM_CONCURRENT_USERS);
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 
@@ -65,6 +69,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					latch.countDown();
 					System.out.println(" - Chat " + chat.getName() + " closed ");
 				}
 			};
@@ -75,6 +80,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 		
 		long startTime = System.currentTimeMillis();
 		chatManager.closeChat(chat);
+		latch.await();		
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newChat notification took " + (endTime - startTime) + " milliseconds to run.");
@@ -86,6 +92,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
+		CountDownLatch latch = new CountDownLatch(NUM_CONCURRENT_USERS);
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_1_Chat_addUser", 5, TimeUnit.SECONDS);
@@ -101,6 +108,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					latch.countDown();
 					System.out.println(" - New user " + user.getName() + " in chat " + chat.getName());
 				}
 			};
@@ -113,6 +121,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		long startTime = System.currentTimeMillis();
 		chat.addUser(user);
+		latch.await();		
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newUserInChat notification took " + (endTime - startTime) + " milliseconds to run.");
@@ -124,6 +133,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		final int NUM_CONCURRENT_USERS = 4;
 		final int MAX_CHATS = 1;
+		CountDownLatch latch = new CountDownLatch(NUM_CONCURRENT_USERS-1);
 
 		ChatManager chatManager = new ChatManager(MAX_CHATS);
 		Chat chat = chatManager.newChat("mejora4_1_Chat_removeUser", 5, TimeUnit.SECONDS);
@@ -139,6 +149,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					latch.countDown();
 					System.out.println(" - User " + user.getName() + " exited from chat " + chat.getName());
 				}
 			};
@@ -150,6 +161,7 @@ public class Mejora4_1_NotificationsInParallelTest {
 
 		long startTime = System.currentTimeMillis();
 		chat.removeUser(user);
+		latch.await();		
 		long endTime = System.currentTimeMillis();
 		
 		System.out.println("DEBUG: newUserInChat notification took " + (endTime - startTime) + " milliseconds to run.");
